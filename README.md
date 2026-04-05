@@ -8,14 +8,22 @@ app_port: 7860
 pinned: false
 ---
 
-## Hugging Face Spaces
+## Hugging Face Spaces (two Spaces, one GitHub repo)
 
-The server **is running** when you see `Application startup complete.` in the logs.
+If **[AISocialMediaweb](https://huggingface.co/spaces/kunaldp379/AISocialMediaweb)** and **[AISocialAgents](https://huggingface.co/spaces/kunaldp379/AISocialAgents)** both build **this same repo**, they would otherwise run the **same** `Dockerfile` and both start the API. Set a **Variable** per Space (Settings → Variables):
 
-The proxy expects port **7860** (`app_port` above). The app uses `PORT`, then `WEB_PORT`, then detects Hugging Face via **`SPACE_ID`** and defaults to **7860**; otherwise **8000** for local dev.
+| Space | Variable | Value |
+|-------|----------|--------|
+| **AISocialMediaweb** | `APP_MODE` | `web` (or delete variable — default is web) |
+| **AISocialAgents** | `APP_MODE` | `agents` |
 
-**Reload / WatchFiles** is off on Spaces (no reloader spam in logs).
+- **`web`:** FastAPI on **7860** — use this URL as **`VITE_API_URL`** for Vercel (e.g. `https://kunaldp379-aisocialmediaweb.hf.space`). Frontend “loading forever” usually means this Space is down, still building, or the browser is calling the **wrong** `.hf.space` URL.
+- **`agents`:** background worker only (no `/api`). Do **not** point the React app here.
 
-**What you see in the browser:** this Space is the **API** only. Opening the Space URL shows JSON at `/` (and **/docs** for Swagger). The React frontend is normally hosted separately (for example Vercel) with `VITE_API_URL` set to your Space URL (`https://<user>-<space>.hf.space`).
+The proxy expects port **7860** for the **web** Space (`app_port` above). `main.py` uses `PORT`, then `WEB_PORT`, then **`SPACE_ID`** → **7860** on HF.
+
+**Reload** is off on Spaces when not in local dev.
+
+**API Space browser:** `/` is JSON, **`/docs`** is Swagger.
 
 Configuration reference: https://huggingface.co/docs/hub/spaces-config-reference

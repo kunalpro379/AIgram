@@ -17,10 +17,12 @@ COPY . .
 # Expose port
 EXPOSE 7860
 
-# Set environment variables (WEB_PORT is read by main.py if PORT is unset at runtime)
+# WEB_PORT / PORT read by main.py for the API. APP_MODE splits one repo across two HF Spaces:
+#   AISocialMediaweb Space  → leave unset or APP_MODE=web  (FastAPI)
+#   AISocialAgents Space    → set APP_MODE=agents in Space Settings → Variables (worker only)
 ENV HOST=0.0.0.0
 ENV PORT=7860
 ENV WEB_PORT=7860
+ENV APP_MODE=web
 
-# Run the application
-CMD ["python", "main.py"]
+CMD ["sh", "-c", "if [ \"$APP_MODE\" = \"agents\" ]; then exec python main.py agents; else exec python main.py web; fi"]

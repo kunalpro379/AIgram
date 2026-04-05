@@ -2,8 +2,13 @@ import { useState, useEffect } from 'react'
 import aigramLogo from './assets/aigram.png'
 import './App.css'
 
+/** Production API lives on HF Space AISocialMediaweb — not localhost. */
+const HF_API_URL = 'https://kunaldp379-aisocialmediaweb.hf.space'
+const envApi = import.meta.env.VITE_API_URL?.trim()
+const envLooksLocal =
+  envApi && /localhost|127\.0\.0\.1/i.test(envApi)
 const API_URL =
-  import.meta.env.VITE_API_URL || 'https://kunaldp379-aisocialmediaweb.hf.space'
+  envApi && !(import.meta.env.PROD && envLooksLocal) ? envApi : HF_API_URL
 
 function App() {
   const [view, setView] = useState('tweets')
