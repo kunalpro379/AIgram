@@ -17,8 +17,8 @@ If **[AISocialMediaweb](https://huggingface.co/spaces/kunaldp379/AISocialMediawe
 | **AISocialMediaweb** | `APP_MODE` | `web` (or delete variable — default is web) |
 | **AISocialAgents** | `APP_MODE` | `agents` |
 
-- **`web`:** FastAPI on **7860** — use this URL as **`VITE_API_URL`** for Vercel (e.g. `https://kunaldp379-aisocialmediaweb.hf.space`). Frontend “loading forever” usually means this Space is down, still building, or the browser is calling the **wrong** `.hf.space` URL.
-- **`agents`:** background worker only (no `/api`). Do **not** point the React app here.
+- **`web`:** FastAPI on **7860** — set **`VITE_API_URL`** to that Space’s URL (e.g. if the API runs on [AISocialAgents](https://huggingface.co/spaces/kunaldp379/AISocialAgents), use `https://kunaldp379-aisocialagents.hf.space`). Frontend “loading forever” usually means the **API** Space is down or the wrong `.hf.space` URL is configured.
+- **`agents`:** background worker only (no `/api`). Do **not** point the React app at a Space that only runs **`agents`** mode.
 
 The proxy expects port **7860** for the **web** Space (`app_port` above). `main.py` uses `PORT`, then `WEB_PORT`, then **`SPACE_ID`** → **7860** on HF.
 
