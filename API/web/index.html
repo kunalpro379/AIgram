@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agents BattleGround</title>
+  <style>
+    :root {
+      --bg: #050505;
+      --panel: #101010;
+      --border: #2b2b2b;
+      --accent: #ffffff;
+      --muted: #a0a0a0;
+      --muted-strong: #d0d0d0;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #222 0%, var(--bg) 55%);
+      color: var(--accent);
+      min-height: 100vh;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+    }
+    main {
+      width: 100vw;
+      min-height: 100vh;
+      padding: 16px;
+      display: grid;
+      grid-template-columns: minmax(360px, 430px) minmax(0, 1fr);
+      gap: 16px;
+    }
+    @media (max-width: 880px) {
+      main { grid-template-columns: 1fr; }
+    }
+    .panel {
+      background: var(--panel);
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      padding: 16px;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.65);
+      min-height: calc(100vh - 32px);
+    }
+    .profile-chip {
+      margin-top: 10px;
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      padding: 8px;
+      color: var(--muted-strong);
+      font-size: 0.8rem;
+    }
+    .ghost-btn {
+      margin-top: 8px;
+      background: #0f0f0f;
+      color: #f5f5f5;
+      border-color: #444;
+      width: 100%;
+    }
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    h1 {
+      font-size: 1.15rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin: 0;
+    }
+    .badge {
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted-strong);
+    }
+    .muted {
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin-top: 6px;
+      line-height: 1.45;
+    }
+    .form-group {
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--muted-strong);
+    }
+    input, select, button {
+      font-family: inherit;
+      font-size: 0.82rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      padding: 9px 13px;
+      background: #050505;
+      color: var(--accent);
+      outline: none;
+    }
+    input::placeholder {
+      color: #666;
+    }
+    .row {
+      display: flex;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .row > * {
+      flex: 1;
+    }
+    button {
+      border-radius: 999px;
+      border: 1px solid #ffffff;
+      background: #ffffff;
+      color: #000000;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+      white-space: nowrap;
+    }
+    button:hover:not(:disabled) {
+      background: #f0f0f0;
+      transform: translateY(-1px);
+    }
+    button:disabled {
+      opacity: 0.55;
+      cursor: default;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    @media (max-width: 880px) {
+      .split { grid-template-columns: 1fr; }
+    }
+    .team-card {
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      background: #080808;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .team-card:hover {
+      transform: translateY(-2px);
+    }
+    .team-card.team-a-card {
+      border-color: #2452ff;
+      box-shadow: inset 0 0 0 1px rgba(36, 82, 255, 0.35);
+    }
+    .team-card.team-b-card {
+      border-color: #ff2f2f;
+      box-shadow: inset 0 0 0 1px rgba(255, 47, 47, 0.35);
+    }
+    .team-title {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      margin-bottom: 4px;
+    }
+    .team-sub {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .team-list {
+      font-size: 0.8rem;
+      color: var(--muted-strong);
+    }
+    .member-row {
+      display: grid;
+      gap: 2px;
+      padding: 6px 7px;
+      border: 1px solid #1f1f1f;
+      border-radius: 9px;
+      background: #0a0a0a;
+      animation: fadeSlide 180ms ease both;
+    }
+    .member-row + .member-row { margin-top: 5px; }
+    .member-name {
+      color: #ffffff;
+      font-weight: 600;
+      font-size: 0.79rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .member-role {
+      color: #bdbdbd;
+      font-size: 0.72rem;
+      line-height: 1.25;
+    }
+
+    .chat-panel {
+      margin-top: 10px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      padding: 10px 12px 12px;
+      background: #050505;
+    }
+    .chat-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 6px;
+    }
+    .chat-header h2 {
+      margin: 0;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+    }
+    .chat-badge {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+    .chat-stream {
+      max-height: 440px;
+      overflow: auto;
+      display: grid;
+      gap: 8px;
+      padding-right: 4px;
+    }
+    .timeline {
+      display: grid;
+      gap: 6px;
+      margin-bottom: 8px;
+      max-height: 190px;
+      overflow: auto;
+      padding: 8px;
+      border-radius: 10px;
+      background: #070707;
+    }
+    .timeline-event {
+      font-size: 0.78rem;
+      color: #b6f7c2;
+      letter-spacing: 0.04em;
+      padding: 4px 8px;
+      border-radius: 8px;
+      background: #06240b;
+      animation: fadeSlide 220ms ease both;
+    }
+    .typing {
+      font-size: 0.78rem;
+      color: var(--muted);
+      padding: 2px 6px;
+    }
+    .typing::after {
+      content: " ...";
+      animation: blinkDots 1s infinite;
+    }
+    .msg {
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 7px 10px;
+      font-size: 0.86rem;
+      background: #080808;
+      animation: fadeSlide 240ms ease both;
+    }
+    .msg-meta {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 3px;
+    }
+    .msg.team_a .msg-meta::before {
+      content: "● ";
+      color: #4f7dff;
+    }
+    .msg.team_b .msg-meta::before {
+      content: "○ ";
+      color: #ff5a5a;
+    }
+    .msg .speaker-name {
+      font-weight: 600;
+    }
+    .msg.team_a .speaker-name {
+      color: #4f7dff;
+    }
+    .msg.team_b .speaker-name {
+      color: #ff5a5a;
+    }
+    .msg .speaker-role {
+      color: #c4c4c4;
+    }
+    .team-a-card .member-name {
+      color: #4f7dff;
+    }
+    .team-b-card .member-name {
+      color: #ff5a5a;
+    }
+
+    .judge-grid {
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: minmax(0, 2fr) minmax(0, 1.5fr);
+      gap: 10px;
+    }
+    @media (max-width: 880px) {
+      .judge-grid { grid-template-columns: 1fr; }
+    }
+    .judge-thoughts {
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      background: #080808;
+      font-size: 0.86rem;
+    }
+    .judge-card {
+      border-left: 2px solid #ffffff;
+      padding-left: 8px;
+      margin-bottom: 7px;
+    }
+    .judge-card-title {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted-strong);
+      margin-bottom: 2px;
+    }
+    .judge-card-text {
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+    .judge-empty {
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+
+    .result-card {
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      background: #080808;
+      font-size: 0.86rem;
+    }
+    .score-pill {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      padding: 5px 9px;
+      font-size: 0.8rem;
+      margin-right: 6px;
+    }
+    .score-pill strong { margin-right: 4px; }
+    .winner-pill {
+      border: 1px solid #ffffff;
+      background: #ffffff;
+      color: #000000;
+      font-weight: 600;
+    }
+    .result-text {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 0.84rem;
+      line-height: 1.4;
+    }
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes blinkDots {
+      0% { opacity: 0.3; }
+      50% { opacity: 1; }
+      100% { opacity: 0.3; }
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      padding: 16px;
+    }
+    .modal {
+      width: min(560px, 96vw);
+      background: #0e0e0e;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 0;
+      overflow: hidden;
+    }
+    .modal-hero {
+      height: 220px;
+      width: 100%;
+      background-image:
+        linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.55)),
+        url("https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=1400&q=80");
+      background-size: cover;
+      background-position: center;
+    }
+    .modal-body {
+      padding: 14px 16px 16px;
+    }
+    .winner-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.65);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 60;
+      padding: 16px;
+    }
+    .winner-modal {
+      width: min(420px, 94vw);
+      background: #0c0c0c;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.6);
+      animation: fadeSlide 240ms ease both;
+      text-align: center;
+    }
+    .winner-title {
+      font-size: 1rem;
+      margin: 4px 0 8px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .winner-team {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .winner-team.team-a {
+      color: #4f7dff;
+    }
+    .winner-team.team-b {
+      color: #ff5a5a;
+    }
+    .winner-close {
+      margin-top: 8px;
+      width: 100%;
+    }
+    .arena-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.94);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 65;
+      padding: 0;
+    }
+    .arena-modal {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: #0d0d0d;
+      border: 0;
+      border-radius: 0;
+      padding: 20px;
+    }
+    .arena-shell {
+      width: min(1240px, 96vw);
+      margin: 0 auto;
+      height: 100%;
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      gap: 10px;
+    }
+    .arena-card {
+      border: 1px solid #202020;
+      border-radius: 12px;
+      padding: 10px;
+      background: #090909;
+    }
+    .arena-list {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      align-content: start;
+      max-height: 100%;
+      overflow: auto;
+      margin-top: 8px;
+      padding-right: 4px;
+    }
+    .arena-item {
+      border: 1px solid #2a2a2a;
+      border-radius: 14px;
+      padding: 8px;
+      background: linear-gradient(180deg, #111 0%, #090909 100%);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+      transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+    .arena-item:hover {
+      border-color: #565656;
+      transform: translateY(-2px);
+      box-shadow: 0 18px 34px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+    }
+    .arena-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .arena-lobby-title {
+      margin: 0;
+      font-size: 1.45rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #ffffff;
+      text-shadow: 0 0 24px rgba(255, 255, 255, 0.14);
+    }
+    .arena-hero {
+      margin-top: 2px;
+      margin-bottom: 12px;
+      border: 1px solid #363636;
+      border-radius: 14px;
+      background: radial-gradient(circle at top left, #1b1b1b 0%, #0e0e0e 58%);
+      padding: 14px 14px 12px;
+      box-shadow: 0 18px 34px rgba(0, 0, 0, 0.38), inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+    }
+    .arena-hero-title {
+      font-size: 1.18rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #ffffff;
+      margin-bottom: 6px;
+      line-height: 1.15;
+    }
+    .arena-hero-sub {
+      font-size: 0.9rem;
+      line-height: 1.5;
+      color: #ececec;
+      margin-bottom: 10px;
+    }
+    .arena-hero-steps {
+      font-size: 0.8rem;
+      color: #c6c6c6;
+      line-height: 1.45;
+      display: grid;
+      gap: 4px;
+    }
+    .white-btn {
+      background: #fff;
+      color: #000;
+      border: 1px solid #fff;
+    }
+    .join-btn {
+      margin-top: 8px;
+      width: 100%;
+      font-size: 0.78rem;
+      padding: 8px 10px;
+      border-radius: 10px;
+      letter-spacing: 0.04em;
+    }
+    .arena-cover {
+      width: 100%;
+      height: 132px;
+      border-radius: 10px;
+      object-fit: cover;
+      border: 1px solid #2b2b2b;
+      margin-bottom: 8px;
+      background: #111;
+    }
+    .arena-inner {
+      border: 1px solid #1f1f1f;
+      border-radius: 10px;
+      background: #0a0a0a;
+      padding: 8px;
+    }
+    .arena-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      gap: 6px;
+    }
+    .arena-creator {
+      font-size: 0.72rem;
+      color: #b9b9b9;
+      background: #111;
+      border: 1px solid #272727;
+      border-radius: 999px;
+      padding: 2px 8px;
+    }
+    .arena-desc {
+      color: #9f9f9f;
+      font-size: 0.74rem;
+      line-height: 1.35;
+      min-height: 38px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-top: 2px;
+    }
+    .arena-empty {
+      min-height: 65vh;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      color: var(--muted-strong);
+    }
+    .arena-empty .muted {
+      margin: 4px 0 10px;
+    }
+    .arena-loading {
+      min-height: 56vh;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      color: var(--muted-strong);
+    }
+    .create-arena-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.72);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 70;
+      padding: 16px;
+    }
+    .create-arena-modal {
+      width: min(520px, 95vw);
+      background: #0f0f0f;
+      border: 1px solid #252525;
+      border-radius: 14px;
+      padding: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div id="profileModal" class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-hero"></div>
+      <div class="modal-body">
+        <div class="panel-header">
+          <h1 style="font-size:1rem;">Your Context</h1>
+          <span class="badge">required once</span>
+        </div>
+        <p class="muted" style="margin-top:0;">This helps agents speak in your language and local context.</p>
+        <div class="form-group">
+          <label for="modalLanguage">Preferred Language</label>
+          <select id="modalLanguage">
+            <option value="English">English</option>
+            <option value="Hindi">Hindi</option>
+            <option value="Marathi">Marathi</option>
+            <option value="Hinglish">Hinglish</option>
+            <option value="Auto">Auto (based on context)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="modalLocation">Where do you live?</label>
+          <input id="modalLocation" placeholder="e.g. Pune, Maharashtra" />
+        </div>
+        <div class="form-group">
+          <label for="modalBackground">Your background</label>
+          <input id="modalBackground" placeholder="e.g. 12th student, parent, working professional" />
+        </div>
+        <div class="form-group" style="margin-top: 14px;">
+          <button id="saveProfileBtn" type="button">Save Context</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="winnerPopup" class="winner-backdrop">
+    <div class="winner-modal">
+      <lottie-player
+        src="https://assets2.lottiefiles.com/packages/lf20_jbrw3hcz.json"
+        background="transparent"
+        speed="1"
+        style="width:120px;height:120px;margin:0 auto;"
+        loop
+        autoplay>
+      </lottie-player>
+      <div class="winner-title">Winner Declared</div>
+      <div id="winnerTeamLabel" class="winner-team">Team A</div>
+      <div id="winnerScoreLine" class="muted" style="margin:0;"></div>
+      <button id="winnerCloseBtn" class="winner-close">Continue</button>
+    </div>
+  </div>
+
+  <div id="arenaModal" class="arena-backdrop">
+    <div class="arena-modal">
+      <div class="arena-shell">
+      <div class="arena-actions">
+        <div class="arena-lobby-title">Arena Lobby</div>
+        <button id="openCreateArenaBtn" class="white-btn" type="button">Create Arena</button>
+      </div>
+      <div class="arena-hero">
+        <div class="arena-hero-title">Clash of LLM Minds</div>
+        <div class="arena-hero-sub">
+          Create arenas, watch AI agents debate, and get unbiased decisions - all in one evolving battle of minds.
+          Every arena is a persistent decision room where strategy, evidence, judge reasoning, and outcomes are tracked live and remembered.
+        </div>
+        <div class="arena-hero-steps">
+          <div>1) Create an arena (name, creator, description, optional image) or join an active one.</div>
+          <div>2) Launch debates and monitor real-time agent-to-agent clashes with judge commentary.</div>
+          <div>3) Refresh anytime and continue from saved history, teams, and previous verdicts.</div>
+        </div>
+      </div>
+      <div id="arenaEmpty" class="arena-empty" style="display:none;">
+        <div>
+          <lottie-player
+            src="https://assets2.lottiefiles.com/packages/lf20_kkflmtur.json"
+            background="transparent"
+            speed="1"
+            style="width:180px;height:180px;margin:0 auto;"
+            loop
+            autoplay>
+          </lottie-player>
+          <div class="team-title" style="margin:0;">No Arenas Yet</div>
+          <div class="muted">Create your first battleground arena.</div>
+          <button id="emptyCreateArenaBtn" class="white-btn" type="button">Create Arena</button>
+        </div>
+      </div>
+      <div id="arenaList" class="arena-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="createArenaModal" class="create-arena-backdrop">
+    <div class="create-arena-modal">
+      <div class="panel-header">
+        <h1 style="font-size:0.95rem;">Create Arena</h1>
+        <span class="badge">new</span>
+      </div>
+      <div class="form-group">
+        <label for="arenaName">Arena Name</label>
+        <input id="arenaName" placeholder="e.g. Career Debate Arena" />
+      </div>
+      <div class="form-group">
+        <label for="arenaCreator">Creator Name</label>
+        <input id="arenaCreator" placeholder="e.g. Kunal" />
+      </div>
+      <div class="form-group">
+        <label for="arenaDescription">Description</label>
+        <input id="arenaDescription" placeholder="Short arena intro" />
+      </div>
+      <div class="form-group">
+        <label for="arenaImage">Image URL (optional)</label>
+        <input id="arenaImage" placeholder="https://..." />
+      </div>
+      <div class="form-group" style="display:flex; gap:8px;">
+        <button id="createArenaBtn" class="white-btn" type="button" style="flex:1;">Create</button>
+        <button id="cancelCreateArenaBtn" type="button" style="flex:1; background:#111; color:#fff; border-color:#333;">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <main>
+    <section class="panel">
+      <div class="panel-header">
+        <h1>Agents Battleground</h1>
+        <span class="badge">debate simulator</span>
+      </div>
+      <p class="muted">
+        Two AI teams argue in a dark room, roast each other a bit, a silent judge keeps score, then a winner walks out.
+      </p>
+
+      <form id="debateForm">
+        <div class="form-group">
+          <label for="topic">Debate Topic</label>
+          <input id="topic" placeholder="e.g. Should AI replace coding interviews?" required />
+        </div>
+        <div class="form-group">
+          <label>Rounds & Squad Size</label>
+          <div class="row">
+            <select id="cycles">
+              <option value="1">1 round</option>
+              <option value="2">2 rounds</option>
+              <option value="3">3 rounds</option>
+              <option value="4">4 rounds</option>
+            </select>
+            <select id="members">
+              <option value="3">3 per team</option>
+              <option value="2">2 per team</option>
+              <option value="4">4 per team</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" style="margin-top: 18px; display:flex; gap:8px;">
+          <button id="runBtn" type="submit" style="flex:1;">Run Debate</button>
+          <button id="stopBtn" type="button" style="flex:0.6; background:#0f0f0f; color:#f5f5f5; border-color:#444;">
+            Stop Stream
+          </button>
+        </div>
+      </form>
+      <div id="profileChip" class="profile-chip">Context not set.</div>
+      <button id="editProfileBtn" type="button" class="ghost-btn">Edit Context</button>
+
+      <div class="split">
+        <div class="team-card team-a-card">
+          <div class="team-title">Team A</div>
+          <div class="team-sub">Argues for the topic</div>
+          <div id="teamA" class="team-list">Waiting for agents…</div>
+        </div>
+        <div class="team-card team-b-card">
+          <div class="team-title">Team B</div>
+          <div class="team-sub">Argues against the topic</div>
+          <div id="teamB" class="team-list">Waiting for agents…</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="chat-panel">
+        <div class="chat-header">
+          <h2>Debate Log</h2>
+          <span class="chat-badge" id="statusBadge">Idle</span>
+        </div>
+        <div id="timeline" class="timeline"></div>
+        <div id="typing" class="typing" style="display:none;">Agents are typing</div>
+        <div id="chat" class="chat-stream"></div>
+      </div>
+
+      <div class="judge-grid">
+        <div class="judge-thoughts">
+          <div class="team-title" style="margin-bottom:4px;">Judge’s Headspace</div>
+          <div id="judgeThoughts" class="judge-empty">No thoughts yet. Start a debate.</div>
+        </div>
+        <div class="result-card">
+          <div class="team-title" style="margin-bottom:4px;">Final Verdict</div>
+          <div id="scoreRow"></div>
+          <div id="judgeSummary" class="result-text"></div>
+          <div id="strategy" class="result-text"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById("debateForm");
+    const runBtn = document.getElementById("runBtn");
+    const stopBtn = document.getElementById("stopBtn");
+    const teamA = document.getElementById("teamA");
+    const teamB = document.getElementById("teamB");
+    const chat = document.getElementById("chat");
+    const timeline = document.getElementById("timeline");
+    const typing = document.getElementById("typing");
+    const judgeThoughts = document.getElementById("judgeThoughts");
+    const scoreRow = document.getElementById("scoreRow");
+    const judgeSummary = document.getElementById("judgeSummary");
+    const strategy = document.getElementById("strategy");
+    const statusBadge = document.getElementById("statusBadge");
+    const profileModal = document.getElementById("profileModal");
+    const saveProfileBtn = document.getElementById("saveProfileBtn");
+    const editProfileBtn = document.getElementById("editProfileBtn");
+    const profileChip = document.getElementById("profileChip");
+    const modalLanguage = document.getElementById("modalLanguage");
+    const modalLocation = document.getElementById("modalLocation");
+    const modalBackground = document.getElementById("modalBackground");
+    const winnerPopup = document.getElementById("winnerPopup");
+    const winnerTeamLabel = document.getElementById("winnerTeamLabel");
+    const winnerScoreLine = document.getElementById("winnerScoreLine");
+    const winnerCloseBtn = document.getElementById("winnerCloseBtn");
+    const arenaModal = document.getElementById("arenaModal");
+    const arenaList = document.getElementById("arenaList");
+    const arenaEmpty = document.getElementById("arenaEmpty");
+    const openCreateArenaBtn = document.getElementById("openCreateArenaBtn");
+    const emptyCreateArenaBtn = document.getElementById("emptyCreateArenaBtn");
+    const createArenaModal = document.getElementById("createArenaModal");
+    const createArenaBtn = document.getElementById("createArenaBtn");
+    const cancelCreateArenaBtn = document.getElementById("cancelCreateArenaBtn");
+    const arenaName = document.getElementById("arenaName");
+    const arenaCreator = document.getElementById("arenaCreator");
+    const arenaDescription = document.getElementById("arenaDescription");
+    const arenaImage = document.getElementById("arenaImage");
+
+    const profile = {
+      preferred_language: "English",
+      user_location: "",
+      user_background: ""
+    };
+    let currentArena = null;
+
+    function renderProfileChip() {
+      const arenaText = currentArena ? ` | Arena: ${currentArena.name}` : " | Arena: none";
+      profileChip.textContent = `Lang: ${profile.preferred_language} | Location: ${profile.user_location || "NA"} | Background: ${profile.user_background || "NA"}${arenaText}`;
+    }
+
+    function clearDiscussionPanels() {
+      chat.innerHTML = "";
+      timeline.innerHTML = "";
+      judgeThoughts.className = "judge-empty";
+      judgeThoughts.textContent = "No thoughts yet. Start a debate.";
+      scoreRow.innerHTML = "";
+      judgeSummary.textContent = "";
+      strategy.textContent = "";
+    }
+
+    function lottieForTeam(teamName) {
+      if (teamName === "team_a") {
+        return "https://assets9.lottiefiles.com/packages/lf20_3vbOcw.json";
+      }
+      return "https://assets2.lottiefiles.com/packages/lf20_touohxv0.json";
+    }
+
+    function renderTeam(el, members, teamName) {
+      if (!members || !members.length) {
+        el.textContent = "No agents.";
+        return;
+      }
+      const avatar = lottieForTeam(teamName);
+      el.innerHTML = members
+        .map(m => `
+          <div class="member-row">
+            <div class="member-name">
+              <lottie-player
+                src="${avatar}"
+                background="transparent"
+                speed="1"
+                style="width:20px;height:20px;"
+                loop
+                autoplay>
+              </lottie-player>
+              ${m.name}
+            </div>
+            <div class="member-role">${m.role}</div>
+          </div>
+        `)
+        .join("");
+    }
+
+    function appendChatMessage(msg) {
+      const div = document.createElement("div");
+      div.className = `msg ${msg.team}`;
+      div.innerHTML = `
+        <div class="msg-meta">
+          ${msg.round.toUpperCase()} •
+          <span class="speaker-name">${msg.speaker}</span>
+          <span class="speaker-role">(${msg.role})</span>
+        </div>
+        <div>${msg.message}</div>
+      `;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function appendTimelineEvent(text) {
+      const e = document.createElement("div");
+      e.className = "timeline-event";
+      e.textContent = text;
+      timeline.appendChild(e);
+    }
+
+    function appendJudgeThought(thought) {
+      if (judgeThoughts.className !== "judge-thoughts") {
+        judgeThoughts.className = "judge-thoughts";
+        judgeThoughts.innerHTML = "";
+      }
+      const block = document.createElement("div");
+      block.className = "judge-card";
+      block.innerHTML = `
+        <div class="judge-card-title">${thought.title}</div>
+        <div class="judge-card-text">${thought.thought}</div>
+      `;
+      judgeThoughts.appendChild(block);
+    }
+
+    function renderResult(result) {
+      const scores = result.scores || {};
+      scoreRow.innerHTML = `
+        <span class="score-pill"><strong>A</strong> ${Number(scores.team_a || 0).toFixed(1)}</span>
+        <span class="score-pill"><strong>B</strong> ${Number(scores.team_b || 0).toFixed(1)}</span>
+        <span class="score-pill winner-pill">Winner: ${result.winner || "-"}</span>
+      `;
+      judgeSummary.textContent = result.judge_summary
+        ? "Judge: " + result.judge_summary
+        : "";
+      strategy.textContent = result.strategy_update
+        ? "Strategy: " + result.strategy_update
+        : "";
+
+      if (result.winner) {
+        const isA = result.winner === "team_a";
+        winnerTeamLabel.textContent = isA ? "Team A Wins" : "Team B Wins";
+        winnerTeamLabel.className = `winner-team ${isA ? "team-a" : "team-b"}`;
+        winnerScoreLine.textContent = `Score A: ${Number(scores.team_a || 0).toFixed(1)} | Score B: ${Number(scores.team_b || 0).toFixed(1)}`;
+        winnerPopup.style.display = "flex";
+      }
+    }
+
+    let running = false;
+    let activeSocket = null;
+
+    function openProfileModal() {
+      modalLanguage.value = profile.preferred_language || "English";
+      modalLocation.value = profile.user_location || "";
+      modalBackground.value = profile.user_background || "";
+      profileModal.style.display = "flex";
+    }
+
+    async function loadArenas() {
+      arenaEmpty.style.display = "none";
+      arenaList.innerHTML = `
+        <div class="arena-loading">
+          <div>
+            <lottie-player
+              src="https://assets2.lottiefiles.com/private_files/lf30_editor_xjx8yani.json"
+              background="transparent"
+              speed="1"
+              style="width:160px;height:160px;margin:0 auto;"
+              loop
+              autoplay>
+            </lottie-player>
+            <div class="team-title" style="margin:0;">Loading Arenas</div>
+            <div class="muted">Fetching available battlegrounds...</div>
+          </div>
+        </div>
+      `;
+      const resp = await fetch("/api/arenas");
+      const data = await resp.json();
+      const arenas = data.arenas || [];
+      if (!arenas.length) {
+        arenaList.innerHTML = "";
+        arenaEmpty.style.display = "grid";
+        return;
+      }
+      arenaEmpty.style.display = "none";
+      const toCoverUrl = (arena) => {
+        const raw = (arena.image_url || arena.imageUrl || "").trim();
+        if (!raw) return "";
+        const lower = raw.toLowerCase();
+        const isDirectImage = [".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif"].some((ext) =>
+          lower.includes(ext)
+        );
+        if (isDirectImage) return raw;
+        return `https://image.thum.io/get/width/900/noanimate/${encodeURIComponent(raw)}`;
+      };
+      arenaList.innerHTML = arenas
+        .map(a => `
+          <div class="arena-item">
+            <div class="arena-inner">
+              ${toCoverUrl(a) ? `<img class="arena-cover" src="${toCoverUrl(a)}" alt="" onerror="this.style.display='none'" />` : ""}
+              <div class="arena-meta">
+                <div class="member-name">${a.name}</div>
+                <div class="arena-creator">by ${a.creator_name}</div>
+              </div>
+              <div class="arena-desc">${a.description || "No description"}</div>
+              <button class="join-btn white-btn" data-id="${a.id}" type="button">Join Arena</button>
+            </div>
+          </div>
+        `)
+        .join("");
+      Array.from(arenaList.querySelectorAll(".join-btn")).forEach((el) => {
+        el.addEventListener("click", async () => {
+          const id = el.getAttribute("data-id");
+          const selected = arenas.find((x) => x.id === id);
+          if (!selected) return;
+          currentArena = selected;
+          localStorage.setItem("arena_id", selected.id);
+          localStorage.setItem("arena_name", selected.name);
+          arenaModal.style.display = "none";
+          renderProfileChip();
+          await loadArenaHistory(selected.id);
+        });
+      });
+    }
+
+    async function loadArenaHistory(arenaId) {
+      clearDiscussionPanels();
+      const resp = await fetch(`/api/arenas/${arenaId}/runs`);
+      const data = await resp.json();
+      const runs = data.runs || [];
+      if (!runs.length) {
+        appendTimelineEvent("No previous runs in this arena.");
+        return;
+      }
+      const latest = runs[0].result || {};
+      renderTeam(teamA, latest.teams?.team_a || [], "team_a");
+      renderTeam(teamB, latest.teams?.team_b || [], "team_b");
+      (latest.chat_events || []).forEach(appendChatMessage);
+      (latest.judge_thoughts || []).forEach(appendJudgeThought);
+      renderResult(latest);
+      appendTimelineEvent("Loaded latest arena discussion from MongoDB.");
+    }
+
+    saveProfileBtn.addEventListener("click", () => {
+      profile.preferred_language = modalLanguage.value;
+      profile.user_location = modalLocation.value.trim();
+      profile.user_background = modalBackground.value.trim();
+      renderProfileChip();
+      profileModal.style.display = "none";
+    });
+
+    editProfileBtn.addEventListener("click", openProfileModal);
+    winnerCloseBtn.addEventListener("click", () => {
+      winnerPopup.style.display = "none";
+    });
+    openCreateArenaBtn.addEventListener("click", () => {
+      createArenaModal.style.display = "flex";
+    });
+    emptyCreateArenaBtn.addEventListener("click", () => {
+      createArenaModal.style.display = "flex";
+    });
+    cancelCreateArenaBtn.addEventListener("click", () => {
+      createArenaModal.style.display = "none";
+    });
+
+    stopBtn.addEventListener("click", () => {
+      running = false;
+      if (activeSocket && activeSocket.readyState === WebSocket.OPEN) {
+        activeSocket.close(1000, "stopped-by-user");
+      }
+      statusBadge.textContent = "Stopped";
+      runBtn.disabled = false;
+    });
+
+    createArenaBtn.addEventListener("click", async () => {
+      const payload = {
+        name: arenaName.value.trim(),
+        creator_name: arenaCreator.value.trim(),
+        description: arenaDescription.value.trim(),
+        image_url: arenaImage.value.trim(),
+      };
+      if (!payload.name || !payload.creator_name) return;
+      const resp = await fetch("/api/arenas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await resp.json();
+      if (data.ok && data.arena) {
+        createArenaModal.style.display = "none";
+        await loadArenas();
+      }
+    });
+
+    function resetOutputForRun() {
+      chat.innerHTML = '<div class="judge-empty">Agents are debating…</div>';
+      judgeThoughts.className = "judge-empty";
+      judgeThoughts.textContent = "Judge is listening…";
+      scoreRow.innerHTML = "";
+      judgeSummary.textContent = "";
+      strategy.textContent = "";
+      timeline.innerHTML = "";
+      typing.style.display = "none";
+    }
+
+    function wsUrl() {
+      const proto = window.location.protocol === "https:" ? "wss" : "ws";
+      return `${proto}://${window.location.host}/ws/debate`;
+    }
+
+    function runOneDebate(topic, cycles, members) {
+      return new Promise((resolve) => {
+        resetOutputForRun();
+        chat.innerHTML = "";
+        const socket = new WebSocket(wsUrl());
+        activeSocket = socket;
+
+        socket.onopen = () => {
+          appendTimelineEvent("Connection ready. Debate room joined.");
+          socket.send(JSON.stringify({
+            topic,
+            arena_id: currentArena ? currentArena.id : "",
+            preferred_language: profile.preferred_language,
+            user_location: profile.user_location,
+            user_background: profile.user_background,
+            max_cycles: cycles,
+            members_per_team: members
+          }));
+        };
+
+        socket.onmessage = (event) => {
+          const msg = JSON.parse(event.data);
+          if (msg.type === "teams") {
+            renderTeam(teamA, msg.team_a || [], "team_a");
+            renderTeam(teamB, msg.team_b || [], "team_b");
+            appendTimelineEvent("Both teams generated with human names.");
+            return;
+          }
+          if (msg.type === "planner") {
+            appendTimelineEvent("Meta-agent planner is ready.");
+            return;
+          }
+          if (msg.type === "sub_questions") {
+            appendTimelineEvent("Debate decomposed into sub-questions.");
+            return;
+          }
+          if (msg.type === "context_ready") {
+            appendTimelineEvent("Latest internet context fetched via Tavily.");
+            return;
+          }
+          if (msg.type === "team_ready") {
+            appendTimelineEvent(msg.message);
+            return;
+          }
+          if (msg.type === "chat_event") {
+            typing.style.display = "none";
+            appendChatMessage(msg.data);
+            return;
+          }
+          if (msg.type === "agent_activity") {
+            appendTimelineEvent(`${msg.agent}: ${msg.thought}`);
+            return;
+          }
+          if (msg.type === "judge_thought") {
+            appendJudgeThought(msg.data);
+            return;
+          }
+          if (msg.type === "score") {
+            renderResult({
+              scores: msg.scores,
+              winner: msg.winner,
+              judge_summary: msg.judge_summary
+            });
+            return;
+          }
+          if (msg.type === "strategy_update") {
+            strategy.textContent = "Strategy: " + (msg.strategy_update || "");
+            return;
+          }
+          if (msg.type === "run_complete") {
+            renderResult(msg.result || {});
+            appendTimelineEvent("Run complete.");
+            socket.close(1000, "run-complete");
+            resolve();
+          }
+        };
+
+        socket.onerror = () => {
+          statusBadge.textContent = "Error";
+          resolve();
+        };
+
+        socket.onclose = () => {
+          resolve();
+        };
+      });
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!currentArena) {
+        arenaModal.style.display = "flex";
+        return;
+      }
+      const topic = document.getElementById("topic").value.trim();
+      const cycles = Number(document.getElementById("cycles").value);
+      const members = Number(document.getElementById("members").value);
+      if (!topic || running) return;
+
+      running = true;
+      runBtn.disabled = true;
+      statusBadge.textContent = "Running Live";
+
+      typing.style.display = "block";
+      await runOneDebate(topic, cycles, members);
+      running = false;
+
+      runBtn.disabled = false;
+      if (statusBadge.textContent !== "Error") {
+        statusBadge.textContent = "Completed";
+      }
+    });
+
+    renderProfileChip();
+    openProfileModal();
+    const savedArenaId = localStorage.getItem("arena_id");
+    const savedArenaName = localStorage.getItem("arena_name");
+    if (savedArenaId && savedArenaName) {
+      currentArena = { id: savedArenaId, name: savedArenaName };
+      renderProfileChip();
+      loadArenaHistory(savedArenaId);
+    } else {
+      arenaModal.style.display = "flex";
+    }
+    loadArenas();
+  </script>
+  <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+</body>
+</html>
