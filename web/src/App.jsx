@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import './App.css'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const API_URL =
+  import.meta.env.VITE_API_URL || 'https://kunaldp379-aisocialmediaweb.hf.space'
 
 function App() {
   const [view, setView] = useState('tweets')
