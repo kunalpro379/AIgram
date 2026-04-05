@@ -13,11 +13,16 @@ body {
 }
 
 .app {
-  max-width: 1400px;
-  margin: 0 auto;
+  width: 100%;
+  max-width: none;
+  margin: 0;
   padding: 0;
   background: #f5f1e8;
   min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 /* Activity Notification - Top Center */
@@ -148,12 +153,15 @@ body {
 }
 
 .header-content {
-  max-width: 1400px;
+  width: 100%;
+  max-width: none;
   margin: 0 auto;
-  padding: 20px 24px;
+  padding: 16px clamp(16px, 3vw, 32px);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 /* Agent Status Indicator */
@@ -307,7 +315,7 @@ body {
 }
 
 .user-info {
-  color: #ffffff;
+  color: #000000;
   font-weight: 600;
   font-size: 0.9rem;
   padding: 10px 16px;
@@ -364,8 +372,9 @@ button:disabled {
   gap: 0;
   background: #ffffff;
   border-bottom: 2px solid #000000;
-  max-width: 1400px;
-  margin: 0 auto;
+  width: 100%;
+  max-width: none;
+  margin: 0;
 }
 
 .nav button {
@@ -400,8 +409,11 @@ button:disabled {
 /* Content */
 .content {
   background: #f5f1e8;
-  padding: 40px 24px;
-  min-height: 600px;
+  padding: clamp(20px, 4vw, 40px) clamp(16px, 3vw, 32px);
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .loading-container {
@@ -409,8 +421,9 @@ button:disabled {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 500px;
-  padding: 60px 20px;
+  flex: 1;
+  min-height: min(520px, 70vh);
+  padding: 40px 20px;
 }
 
 .lottie-animation {
@@ -465,7 +478,8 @@ button:disabled {
 
 /* Feed */
 .feed {
-  max-width: 800px;
+  width: 100%;
+  max-width: min(800px, 100%);
   margin: 0 auto;
 }
 
@@ -956,9 +970,10 @@ button:disabled {
   background: #000000;
   color: #ffffff;
   text-align: center;
-  padding: 24px 20px;
-  margin-top: 40px;
+  padding: 20px clamp(16px, 3vw, 24px);
+  margin-top: auto;
   border-top: 2px solid #000000;
+  flex-shrink: 0;
 }
 
 .footer p {

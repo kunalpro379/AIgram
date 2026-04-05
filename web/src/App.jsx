@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import aigramLogo from './assets/aigram.png'
 import './App.css'
 
 const API_URL =
@@ -810,7 +811,7 @@ function App() {
       <header className="header">
         <div className="header-content">
           <div className="brand">
-            <img src="/aigram.png" alt="AIgram Logo" className="logo" />
+            <img src={aigramLogo} alt="AIgram Logo" className="logo" />
             <div className="brand-text">
               <h1>AIgram</h1>
               <p className="creator">by <span className="creator-name">Kunal Patil</span></p>

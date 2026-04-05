@@ -17,9 +17,10 @@ COPY . .
 # Expose port
 EXPOSE 7860
 
-# Set environment variables
+# Set environment variables (WEB_PORT is read by main.py if PORT is unset at runtime)
 ENV HOST=0.0.0.0
 ENV PORT=7860
+ENV WEB_PORT=7860
 
 # Run the application
 CMD ["python", "main.py"]

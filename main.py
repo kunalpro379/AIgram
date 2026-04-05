@@ -10,20 +10,55 @@ import asyncio
 from datetime import datetime, timezone
 from API.social_server import app
 
+
+def _is_huggingface_space() -> bool:
+    """Docker Spaces expose SPACE_ID; avoid relying on PORT always being set."""
+    import os
+
+    if os.getenv("SPACE_ID"):
+        return True
+    return os.getenv("SYSTEM", "").lower() == "spaces"
+
+
+def _listen_port() -> int:
+    """PORT (many hosts), WEB_PORT (.env), HF Spaces default 7860, else local 8000."""
+    import os
+
+    if os.getenv("PORT"):
+        return int(os.getenv("PORT"))
+    if os.getenv("WEB_PORT"):
+        return int(os.getenv("WEB_PORT"))
+    if _is_huggingface_space():
+        return 7860
+    return 8000
+
+
+def _uvicorn_reload() -> bool:
+    """Auto-reload only for local dev; HF often omits PORT so detect SPACE_ID too."""
+    import os
+
+    if os.getenv("PORT") or os.getenv("WEB_PORT"):
+        return False
+    if _is_huggingface_space():
+        return False
+    return True
+
+
 def start_web_server():
     """Start the FastAPI web server"""
     import uvicorn
     import os
-    
+
     host = os.getenv("HOST", "0.0.0.0")
-    port = int(os.getenv("WEB_PORT", 8000))
-    
+    port = _listen_port()
+    reload = _uvicorn_reload()
+
     print("[START] Starting AIgram API Server...")
     print(f"[SERVER] http://{host}:{port}")
     print(f"[DOCS] API Docs: http://{host}:{port}/docs")
     print(f"[AGENTS] Start agents: POST http://{host}:{port}/api/orchestrator/start")
-    
-    uvicorn.run("main:app", host=host, port=port, reload=True)
+
+    uvicorn.run("main:app", host=host, port=port, reload=reload)
 
 
 async def start_agents_only():
@@ -114,11 +149,10 @@ def start_both():
     """Start both web server and agents (not recommended for production)"""
     import uvicorn
     import os
-    from threading import Thread
-    
+
     host = os.getenv("HOST", "0.0.0.0")
-    port = int(os.getenv("WEB_PORT", 8000))
-    
+    port = _listen_port()
+
     print("[START] Starting AIgram - Full Platform...")
     print(f"[API] Server: http://{host}:{port}")
     print(f"[AGENTS] Will auto-start via API")

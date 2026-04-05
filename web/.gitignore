@@ -23,5 +23,3 @@ dist-ssr
 *.sln
 *.sw?
 
-# HF Spaces rejects binary files in git; use SVG in public/ or Xet for large assets
-public/aigram.png
