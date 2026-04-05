@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import aigramLogo from './assets/aigram.png'
 import './App.css'
 
@@ -9,6 +9,10 @@ const envLooksLocal =
   envApi && /localhost|127\.0\.0\.1/i.test(envApi)
 const API_URL =
   envApi && !(import.meta.env.PROD && envLooksLocal) ? envApi : HF_API_URL
+
+/** Hugging Face Spaces often drops idle WebSockets; use REST polling there unless overridden. */
+const ACTIVITY_USE_WEBSOCKET =
+  import.meta.env.VITE_DISABLE_WS !== '1' && !/hf\.space/i.test(API_URL)
 
 function App() {
   const [view, setView] = useState('tweets')
@@ -59,7 +63,12 @@ function App() {
   // Activity Stream state
   const [currentActivity, setCurrentActivity] = useState(null)
   const [activityQueue, setActivityQueue] = useState([])
-  const [ws, setWs] = useState(null)
+  const viewRef = useRef(view)
+  viewRef.current = view
+  const wsRef = useRef(null)
+  const wsReconnectTimerRef = useRef(null)
+  const wsReconnectOkRef = useRef(true)
+  const lastActivityPollIdRef = useRef(0)
   
   // Settings state
   const [showSettings, setShowSettings] = useState(false)
@@ -76,25 +85,108 @@ function App() {
   }
 
   useEffect(() => {
-    // Check for saved token
     const token = localStorage.getItem('token')
     if (token) {
       verifyToken(token)
     }
-    
+  }, [])
+
+  useEffect(() => {
     loadData()
-    const interval = setInterval(loadData, 5000)
-    
-    // Setup WebSocket for activity streaming
-    setupWebSocket()
-    
-    return () => {
-      clearInterval(interval)
-      if (ws) {
-        ws.close()
+  }, [view])
+
+  useEffect(() => {
+    const pollStats = async () => {
+      try {
+        const statsRes = await fetch(`${API_URL}/api/orchestrator/stats`)
+        const statsData = await statsRes.json()
+        if (statsData.ok) {
+          setStats(statsData.stats)
+          setOrchestratorRunning(statsData.stats.running)
+        }
+      } catch (e) {
+        console.error('Error polling stats:', e)
       }
     }
-  }, [view])
+    const interval = setInterval(pollStats, 5000)
+    return () => clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
+    if (!ACTIVITY_USE_WEBSOCKET) return
+
+    wsReconnectOkRef.current = true
+    const connect = () => {
+      if (wsReconnectTimerRef.current) {
+        clearTimeout(wsReconnectTimerRef.current)
+        wsReconnectTimerRef.current = null
+      }
+      const wsUrl = API_URL.replace(/^http/, 'ws') + '/ws/activity'
+      const websocket = new WebSocket(wsUrl)
+      wsRef.current = websocket
+
+      websocket.onmessage = (event) => {
+        try {
+          const activity = JSON.parse(event.data)
+          if (activity?.type === 'ping') return
+          setActivityQueue((prev) => [...prev, activity])
+        } catch (e) {
+          console.warn('WebSocket message parse error:', e)
+        }
+      }
+
+      websocket.onerror = (error) => {
+        console.error('WebSocket error:', error)
+      }
+
+      websocket.onclose = () => {
+        wsRef.current = null
+        if (!wsReconnectOkRef.current) return
+        wsReconnectTimerRef.current = setTimeout(connect, 3000)
+      }
+    }
+
+    connect()
+
+    return () => {
+      wsReconnectOkRef.current = false
+      if (wsReconnectTimerRef.current) {
+        clearTimeout(wsReconnectTimerRef.current)
+        wsReconnectTimerRef.current = null
+      }
+      const sock = wsRef.current
+      wsRef.current = null
+      if (sock && sock.readyState === WebSocket.OPEN) {
+        sock.close()
+      } else if (sock && sock.readyState === WebSocket.CONNECTING) {
+        sock.onopen = () => sock.close()
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    if (ACTIVITY_USE_WEBSOCKET) return
+
+    const pollActivity = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/activity/latest?limit=25`)
+        const data = await res.json()
+        if (!data.ok || !Array.isArray(data.activities)) return
+        const sorted = [...data.activities].sort((a, b) => (a.id || 0) - (b.id || 0))
+        const last = lastActivityPollIdRef.current
+        const fresh = sorted.filter((a) => a.id != null && a.id > last)
+        if (!fresh.length) return
+        lastActivityPollIdRef.current = Math.max(...fresh.map((a) => a.id))
+        setActivityQueue((prev) => [...prev, ...fresh])
+      } catch (e) {
+        console.warn('Activity poll failed:', e)
+      }
+    }
+
+    pollActivity()
+    const id = setInterval(pollActivity, 5000)
+    return () => clearInterval(id)
+  }, [])
 
   const verifyToken = async (token) => {
     try {
@@ -385,33 +477,6 @@ function App() {
     }
   }
 
-  const setupWebSocket = () => {
-    const wsUrl = API_URL.replace('http', 'ws') + '/ws/activity'
-    const websocket = new WebSocket(wsUrl)
-    
-    websocket.onopen = () => {
-      console.log('WebSocket connected')
-      setWs(websocket)
-    }
-    
-    websocket.onmessage = (event) => {
-      const activity = JSON.parse(event.data)
-      console.log('New activity:', activity)
-      
-      // Add to queue
-      setActivityQueue(prev => [...prev, activity])
-    }
-    
-    websocket.onerror = (error) => {
-      console.error('WebSocket error:', error)
-    }
-    
-    websocket.onclose = () => {
-      console.log('WebSocket closed, reconnecting...')
-      setTimeout(setupWebSocket, 3000)
-    }
-  }
-
   // Process activity queue - show one at a time
   useEffect(() => {
     if (!currentActivity && activityQueue.length > 0) {
@@ -428,8 +493,9 @@ function App() {
   }, [currentActivity, activityQueue])
 
   const loadData = async () => {
+    const v = viewRef.current
     try {
-      if (view === 'tweets') {
+      if (v === 'tweets') {
         setTweetsLoading(true)
         const res = await fetch(`${API_URL}/api/posts?limit=20&skip=0`)
         const data = await res.json()
@@ -439,19 +505,19 @@ function App() {
           setHasMorePosts(data.posts.length === 20)
         }
         setTweetsLoading(false)
-      } else if (view === 'agents') {
+      } else if (v === 'agents') {
         setAgentsLoading(true)
         const res = await fetch(`${API_URL}/api/agents?limit=100`)
         const data = await res.json()
         if (data.ok) setAgents(data.agents)
         setAgentsLoading(false)
-      } else if (view === 'communities') {
+      } else if (v === 'communities') {
         setCommunitiesLoading(true)
         const res = await fetch(`${API_URL}/api/groups?limit=50`)
         const data = await res.json()
         if (data.ok) setGroups(data.groups)
         setCommunitiesLoading(false)
-      } else if (view === 'debates') {
+      } else if (v === 'debates') {
         setDebatesLoading(true)
         const res = await fetch(`${API_URL}/api/debates?limit=30`)
         const data = await res.json()
@@ -473,6 +539,7 @@ function App() {
       setAgentsLoading(false)
       setCommunitiesLoading(false)
       setDebatesLoading(false)
+      setInitialLoading(false)
     }
   }
 

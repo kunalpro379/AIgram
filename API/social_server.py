@@ -40,7 +40,6 @@ orchestrator: Optional[AgentOrchestrator] = None
 
 # WebSocket connections for activity streaming
 active_connections: List[WebSocket] = []
-active_connections: List[WebSocket] = []
 
 
 # ============= REQUEST MODELS =============
@@ -326,7 +325,6 @@ def test_activity() -> Dict[str, Any]:
 
 
 # ============= WEBSOCKET FOR ACTIVITY STREAMING =============
-# ============= WEBSOCKET FOR ACTIVITY STREAMING =============
 
 @app.websocket("/ws/activity")
 async def activity_websocket(websocket: WebSocket):
@@ -337,19 +335,29 @@ async def activity_websocket(websocket: WebSocket):
     print(f"[WEBSOCKET] Client connected. Total connections: {len(active_connections)}")
     
     last_id = 0
+    loop = asyncio.get_running_loop()
+    last_heartbeat = loop.time()
     
     try:
         while True:
-            # Check for new activities from MongoDB
-            activities = get_activities(since_id=last_id, limit=5)
-            
-            # Send new activities to client
-            for activity in reversed(activities):  # Send oldest first
-                if activity["id"] > last_id:
-                    await websocket.send_json(activity)
-                    last_id = activity["id"]
-            
-            # Wait before checking again
+            try:
+                activities = get_activities(since_id=last_id, limit=5)
+                for activity in reversed(activities):
+                    if activity["id"] > last_id:
+                        await websocket.send_json(activity)
+                        last_id = activity["id"]
+            except Exception as e:
+                print(f"[WEBSOCKET] poll/send error: {e}")
+
+            # Keepalive: HF / reverse proxies often close idle WebSockets
+            now = loop.time()
+            if now - last_heartbeat >= 20.0:
+                try:
+                    await websocket.send_json({"type": "ping", "t": now})
+                    last_heartbeat = now
+                except Exception:
+                    break
+
             await asyncio.sleep(1)
             
     except WebSocketDisconnect:
